@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Inventory Management System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:      #0d1117;
+    --surface: #161b22;
+    --card:    #1c2333;
+    --border:  #30363d;
+    --accent:  #58a6ff;
+    --accent2: #3fb950;
+    --danger:  #f85149;
+    --warn:    #e3b341;
+    --text:    #e6edf3;
+    --muted:   #8b949e;
+    --radius:  10px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+  /* ── Top Bar ── */
+  header{
+    background:var(--surface);
+    border-bottom:1px solid var(--border);
+    padding:0 24px;
+    height:60px;
+    display:flex;align-items:center;justify-content:space-between;
+    position:sticky;top:0;z-index:100;
+  }
+  header h1{font-size:1.1rem;font-weight:600;letter-spacing:.3px;
+    background:linear-gradient(90deg,#58a6ff,#a371f7);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  .filter-wrap{display:flex;align-items:center;gap:10px;}
+  .filter-wrap label{font-size:.8rem;color:var(--muted);}
+  select,input{
+    background:var(--card);border:1px solid var(--border);color:var(--text);
+    padding:7px 12px;border-radius:6px;font-size:.85rem;font-family:inherit;
+    outline:none;transition:border-color .2s;
+  }
+  select:focus,input:focus{border-color:var(--accent);}
+
+  /* ── Layout ── */
+  .layout{display:grid;grid-template-columns:320px 1fr;gap:20px;padding:20px 24px;align-items:start;}
+  @media(max-width:900px){.layout{grid-template-columns:1fr;}}
+
+  /* ── Cards ── */
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;}
+  .card h2{font-size:.9rem;font-weight:600;color:var(--accent);margin-bottom:16px;
+    text-transform:uppercase;letter-spacing:.8px;}
+  .card+.card{margin-top:16px;}
+
+  /* ── Forms ── */
+  .form-group{margin-bottom:12px;}
+  .form-group label{display:block;font-size:.78rem;color:var(--muted);margin-bottom:4px;}
+  .form-group input,.form-group select{width:100%;}
+  .btn{
+    width:100%;padding:9px;border:none;border-radius:6px;font-size:.85rem;font-weight:600;
+    cursor:pointer;transition:opacity .2s,transform .1s;font-family:inherit;
+  }
+  .btn:hover{opacity:.88;} .btn:active{transform:scale(.98);}
+  .btn-primary{background:linear-gradient(135deg,#1f6feb,#388bfd);color:#fff;}
+  .btn-success{background:linear-gradient(135deg,#238636,#3fb950);color:#fff;margin-top:12px;}
+  .btn-danger{background:transparent;border:1px solid var(--danger);color:var(--danger);
+    padding:4px 10px;width:auto;border-radius:5px;font-size:.78rem;font-weight:500;}
+  .btn-danger:hover{background:var(--danger);color:#fff;}
+
+  /* ── Divider ── */
+  .divider{height:1px;background:var(--border);margin:18px 0;}
+
+  /* ── Table ── */
+  .table-wrap{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:.84rem;}
+  thead tr{background:#0d1117;}
+  th{padding:10px 14px;text-align:left;color:var(--muted);font-size:.75rem;
+    text-transform:uppercase;letter-spacing:.7px;border-bottom:1px solid var(--border);}
+  td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:middle;}
+  tbody tr{transition:background .15s;}
+  tbody tr:hover{background:rgba(88,166,255,.05);}
+
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:600;}
+  .badge-green{background:rgba(63,185,80,.15);color:#3fb950;border:1px solid rgba(63,185,80,.3);}
+  .badge-red  {background:rgba(248,81,73,.15);color:#f85149;border:1px solid rgba(248,81,73,.3);}
+  .badge-cat  {background:rgba(88,166,255,.12);color:var(--accent);border:1px solid rgba(88,166,255,.25);}
+
+  /* ── Toast ── */
+  #toast{
+    position:fixed;bottom:28px;right:28px;
+    padding:12px 20px;border-radius:8px;font-size:.85rem;font-weight:500;
+    opacity:0;transform:translateY(8px);transition:all .3s;pointer-events:none;z-index:999;
+  }
+  #toast.show{opacity:1;transform:translateY(0);}
+  #toast.success{background:#238636;color:#fff;}
+  #toast.error  {background:#b62324;color:#fff;}
+
+  /* ── Empty state ── */
+  .empty{text-align:center;padding:40px;color:var(--muted);font-size:.9rem;}
+
+  /* ── Spinner ── */
+  .spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);
+    border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ── Stats bar ── */
+  .stats{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
+  .stat{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 16px;flex:1;min-width:120px;}
+  .stat .val{font-size:1.3rem;font-weight:700;color:var(--accent);}
+  .stat .lbl{font-size:.72rem;color:var(--muted);margin-top:2px;}
+</style>
+</head>
+<body>
+
+<!-- ── Top Bar ── -->
+<header>
+  <h1>🏭 Inventory Management System</h1>
+  <div class="filter-wrap">
+    <label for="filterWarehouse">Filter by Warehouse:</label>
+    <select id="filterWarehouse" onchange="loadItems()">
+      <option value="">All Warehouses</option>
+    </select>
+  </div>
+</header>
+
+<!-- ── Layout ── -->
+<div class="layout">
+
+  <!-- LEFT PANEL -->
+  <div>
+    <!-- Add Item -->
+    <div class="card">
+      <h2>➕ Add New Item</h2>
+      <form id="addForm" onsubmit="addItem(event)">
+        <div class="form-group">
+          <label>Item Name</label>
+          <input id="itemName" type="text" placeholder="e.g. Steel Bolts M8" required/>
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <input id="itemCategory" type="text" placeholder="e.g. Hardware" required/>
+        </div>
+        <div class="form-group">
+          <label>Quantity</label>
+          <input id="itemQuantity" type="number" min="0" placeholder="0" required/>
+        </div>
+        <div class="form-group">
+          <label>Price ($)</label>
+          <input id="itemPrice" type="number" min="0" step="0.01" placeholder="0.00" required/>
+        </div>
+        <div class="form-group">
+          <label>Warehouse</label>
+          <select id="itemWarehouse" required></select>
+        </div>
+        <button class="btn btn-primary" type="submit" id="addBtn">Add Item</button>
+      </form>
+    </div>
+
+    <!-- Transfer Stock -->
+    <div class="card">
+      <h2>🔄 Transfer Stock</h2>
+      <form id="transferForm" onsubmit="transferStock(event)">
+        <div class="form-group">
+          <label>Select Item</label>
+          <select id="transferItem" required></select>
+        </div>
+        <div class="form-group">
+          <label>Destination Warehouse</label>
+          <select id="transferDest" required></select>
+        </div>
+        <div class="form-group">
+          <label>Quantity to Transfer</label>
+          <input id="transferQty" type="number" min="1" placeholder="1" required/>
+        </div>
+        <button class="btn btn-success" type="submit" id="txBtn">Transfer Stock</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div>
+    <div class="stats">
+      <div class="stat"><div class="val" id="statTotal">—</div><div class="lbl">Total Items</div></div>
+      <div class="stat"><div class="val" id="statUnits">—</div><div class="lbl">Total Units</div></div>
+      <div class="stat"><div class="val" id="statLow">—</div><div class="lbl">Low Stock (&lt;10)</div></div>
+      <div class="stat"><div class="val" id="statValue">—</div><div class="lbl">Total Value</div></div>
+    </div>
+    <div class="card">
+      <h2>📦 Current Inventory</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th><th>Category</th><th>Quantity</th>
+              <th>Price</th><th>Warehouse</th><th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="itemsBody">
+            <tr><td colspan="6" class="empty">Loading inventory…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+const API = 'http://localhost:5000';
+let allItems = [];
+let warehouses = [];
+
+// ── Toast ──────────────────────────────────────────────────────
+function toast(msg, type='success'){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `show ${type}`;
+  clearTimeout(t._to);
+  t._to = setTimeout(()=>{ t.className=''; }, 3200);
+}
+
+// ── Fallback warehouse list (shown when backend is offline) ─────
+const FALLBACK_WAREHOUSES = [
+  { id: 1, name: 'Main Hub' },
+  { id: 2, name: 'East Coast' },
+  { id: 3, name: 'West Coast' },
+  { id: 4, name: 'South Hub' },
+];
+
+// ── Populate all warehouse selects ──────────────────────────────
+function populateWarehouseSelects(list){
+  const selects = ['filterWarehouse','itemWarehouse','transferDest'];
+  selects.forEach(id=>{
+    const el = document.getElementById(id);
+    const base = id==='filterWarehouse'
+      ? '<option value="">All Warehouses</option>'
+      : '<option value="" disabled selected>Select warehouse…</option>';
+    el.innerHTML = base + list.map(w=>`<option value="${w.id}">${w.name}</option>`).join('');
+  });
+}
+
+// ── Load Warehouses ────────────────────────────────────────────
+async function loadWarehouses(){
+  try{
+    const res = await fetch(`${API}/warehouses`);
+    if(!res.ok) throw new Error();
+    warehouses = await res.json();
+    // If DB has no rows yet, fall back
+    if(!warehouses.length) warehouses = FALLBACK_WAREHOUSES;
+  } catch(e){
+    warehouses = FALLBACK_WAREHOUSES;
+  }
+  populateWarehouseSelects(warehouses);
+}
+
+// ── Load Items ─────────────────────────────────────────────────
+async function loadItems(){
+  const wid = document.getElementById('filterWarehouse').value;
+  const url  = wid ? `${API}/items?warehouse=${wid}` : `${API}/items`;
+  try{
+    const res = await fetch(url);
+    allItems = await res.json();
+    renderTable(allItems);
+    updateStats(allItems);
+    populateTransferDropdown(allItems);
+  } catch(e){
+    document.getElementById('itemsBody').innerHTML =
+      `<tr><td colspan="6" class="empty">⚠ Could not connect to backend.</td></tr>`;
+  }
+}
+
+// ── Render Table ───────────────────────────────────────────────
+function renderTable(items){
+  const tbody = document.getElementById('itemsBody');
+  if(!items.length){
+    tbody.innerHTML = `<tr><td colspan="6" class="empty">No items found.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = items.map(item=>`
+    <tr id="row-${item.id}">
+      <td style="font-weight:500">${esc(item.name)}</td>
+      <td><span class="badge badge-cat">${esc(item.category)}</span></td>
+      <td><span class="badge ${item.quantity<10?'badge-red':'badge-green'}">${item.quantity}</span></td>
+      <td>$${parseFloat(item.price).toFixed(2)}</td>
+      <td>${esc(item.warehouse_name)}</td>
+      <td><button class="btn btn-danger" onclick="deleteItem(${item.id})">Delete</button></td>
+    </tr>`).join('');
+}
+
+// ── Stats ──────────────────────────────────────────────────────
+function updateStats(items){
+  document.getElementById('statTotal').textContent = items.length;
+  document.getElementById('statUnits').textContent = items.reduce((s,i)=>s+i.quantity,0).toLocaleString();
+  document.getElementById('statLow').textContent   = items.filter(i=>i.quantity<10).length;
+  const val = items.reduce((s,i)=>s+(i.quantity*parseFloat(i.price)),0);
+  document.getElementById('statValue').textContent = '$'+val.toLocaleString('en-US',{maximumFractionDigits:0});
+}
+
+// ── Transfer Dropdown ──────────────────────────────────────────
+function populateTransferDropdown(items){
+  const sel = document.getElementById('transferItem');
+  sel.innerHTML = '<option value="" disabled selected>Select item</option>' +
+    items.map(i=>`<option value="${i.id}" data-wid="${i.warehouse_id}">${esc(i.name)} (${esc(i.warehouse_name)}, qty:${i.quantity})</option>`).join('');
+}
+
+// ── Add Item ───────────────────────────────────────────────────
+async function addItem(e){
+  e.preventDefault();
+  const btn = document.getElementById('addBtn');
+  btn.innerHTML = '<span class="spinner"></span>Adding…'; btn.disabled=true;
+  const body = {
+    name        : document.getElementById('itemName').value.trim(),
+    category    : document.getElementById('itemCategory').value.trim(),
+    quantity    : document.getElementById('itemQuantity').value,
+    price       : document.getElementById('itemPrice').value,
+    warehouse_id: document.getElementById('itemWarehouse').value,
+  };
+  try{
+    const res  = await fetch(`${API}/items`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error||'Failed');
+    toast(`✅ "${data.name}" added successfully!`);
+    document.getElementById('addForm').reset();
+    await loadItems();
+  } catch(err){ toast(`❌ ${err.message}`,'error'); }
+  finally{ btn.innerHTML='Add Item'; btn.disabled=false; }
+}
+
+// ── Delete Item ────────────────────────────────────────────────
+async function deleteItem(id){
+  if(!confirm('Delete this item?')) return;
+  const row = document.getElementById(`row-${id}`);
+  if(row) row.style.opacity='.4';
+  try{
+    const res  = await fetch(`${API}/items/${id}`,{method:'DELETE'});
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error||'Failed');
+    toast('🗑 Item deleted.');
+    await loadItems();
+  } catch(err){ toast(`❌ ${err.message}`,'error'); if(row) row.style.opacity='1'; }
+}
+
+// ── Transfer Stock ─────────────────────────────────────────────
+async function transferStock(e){
+  e.preventDefault();
+  const btn = document.getElementById('txBtn');
+  btn.innerHTML = '<span class="spinner"></span>Transferring…'; btn.disabled=true;
+  const body = {
+    item_id                 : document.getElementById('transferItem').value,
+    destination_warehouse_id: document.getElementById('transferDest').value,
+    quantity                : document.getElementById('transferQty').value,
+  };
+  try{
+    const res  = await fetch(`${API}/transfer`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error||'Failed');
+    toast(`🔄 ${data.message}`);
+    document.getElementById('transferForm').reset();
+    await loadItems();
+  } catch(err){ toast(`❌ ${err.message}`,'error'); }
+  finally{ btn.innerHTML='Transfer Stock'; btn.disabled=false; }
+}
+
+// ── Escape HTML ────────────────────────────────────────────────
+function esc(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+// ── Init ───────────────────────────────────────────────────────
+(async()=>{
+  await loadWarehouses();
+  await loadItems();
+})();
+</script>
+</body>
+</html>
